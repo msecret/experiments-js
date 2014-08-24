@@ -14,25 +14,44 @@ function Promise(fn) {
     }
   }
 
-  function handle(onResolved) {
+  function reject(reason) {
+    val = reason;
+    state = 'rejected';
+
+    if (deferred) {
+      handle(deferred);
+    }
+  }
+
+  function handle(handler) {
     if (state === 'pending') {
-      deferred = onResolved;
+      deferred = handler;
       return;
     }
-
-    onResolved(val);
+    if (state == 'resolved') {
+      handler.resolve(val);
+    } else {
+      handler.reject(val);
+    }
   }
-  this.then = function(onResolved) {
-    handle(onResolved);
+  this.then = function(onResolved, onRejected) {
+    var handler = {};
+    handler.resolve = onResolved;
+    handler.reject = onRejected;
+    handle(handler);
   };
-  fn(resolve);
+  fn(resolve, reject);
 }
 
 function doit() {
-  return new Promise(function(resolve) {
+  return new Promise(function(resolve, reject) {
     setTimeout(function() {
-      var s = 'poop';
-      resolve(s);
+      var s = 'd';
+      if (s === 's') {
+        resolve(s);
+      } else {
+        reject('incorrect');
+      }
     }, 10);
   });
 }
@@ -40,5 +59,7 @@ function doit() {
 var s;
 s = doit();
 s.then(function(data) {
-  console.log(data)
+  console.log(data);
+}, function(reason) {
+  console.log(reason);
 });
